@@ -1,0 +1,12 @@
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
+
+# Archivos del ejecutable (PyInstaller)
+build/
+dist/
+*.spec
+
+# Entornos virtuales
+venv/
+.env
