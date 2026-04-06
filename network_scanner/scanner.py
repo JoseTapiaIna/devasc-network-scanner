@@ -54,5 +54,5 @@ def main():
                 info_banner = f" | Banner: {banner[:30]}..." if banner else ""
                 print(f"  [>] Puerto {puerto} ABIERTO{info_banner}")
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
