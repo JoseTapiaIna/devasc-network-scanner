@@ -10,7 +10,7 @@ Proyecto desarrollado para la asignatura **DEVASC** de Ingeniería en Telecomuni
 
 * **José Tapia**: Líder de Proyecto (Coordinación y Repositorio)
 
-* **Martín [Apellido]**: Desarrollador Principal (Lógica de Red en Python)
+* **Martín Cortes**: Desarrollador Principal (Lógica de Red en Python)
 
 * **Pedro Roga Carvajal**: Documentador (README y Soporte Técnico)
 
