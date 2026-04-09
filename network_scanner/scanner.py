@@ -3,7 +3,6 @@
 
 """
 PROYECTO: CyberScanner v4.9.9 - Edición Auditoría Técnica
-EQUIPO: Los Power Rangers (Jose Tapia, Martin Cortes)
 DESCRIPCIÓN: Escáner de red profesional optimizado para Windows (.exe)
              con diagnóstico de capas 3 y 4.
 """
