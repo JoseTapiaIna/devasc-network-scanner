@@ -1,0 +1,22 @@
+REPORTE TÉCNICO DE AUDITORÍA - 2026-04-08 05:17:39.671155
+[*] Auditoría iniciada: 05:12:23
+[*] Técnica detectada: TCP Connect Scan + Banner Grabbing
+-------------------------------------------------------------------------------------
+
+[NODE DETECTED] Host IP: 10.0.2.15
+    [!] Información: No se detectaron servicios en puertos estándar.
+    [i] Diagnóstico: Posible Firewall o políticas de filtrado activas.
+-------------------------------------------------------------------------------------
+
+[NODE DETECTED] Host IP: 10.0.2.3
+PUERTO     | SERVICIO     | BANNER / VERSIÓN
+---------------------------------------------------------------------------
+53         | DNS          | Servicio activo (Sin banner disponible)
+-------------------------------------------------------------------------------------
+
+[NODE DETECTED] Host IP: 10.0.2.2
+    [!] Información: No se detectaron servicios en puertos estándar.
+    [i] Diagnóstico: Posible Firewall o políticas de filtrado activas.
+-------------------------------------------------------------------------------------
+
+[*] Análisis de red finalizado correctamente.
