@@ -83,7 +83,7 @@ def scan_puerto_detallado(host, port):
 class ScannerChileV49:
     def __init__(self, root):
         self.root = root
-        self.root.title("CyberScanner v4.9.9 - Auditoría Power Rangers Telecom")
+        self.root.title("CyberScanner v4.9.9 - Auditoría Telecom")
         self.root.geometry("1100x800")
         self.root.configure(bg=COLOR_BG)
         
