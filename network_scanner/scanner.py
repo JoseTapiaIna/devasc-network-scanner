@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-PROYECTO: CyberScanner v4.9 - Auditoría de Redes
+PROYECTO: CyberScanner v4.9.2 - Auditoría de Redes
 ESTUDIANTE: Jose Tapia, Martin Cortes
 DESCRIPCIÓN: Herramienta profesional de auditoría para identificar hosts y 
-servicios, con análisis de latencia y detección de Firewalls (Capa 4).
+servicios, optimizada para ejecución silenciosa en Windows y Linux.
 """
 
 import socket
@@ -15,45 +15,50 @@ import platform
 import tkinter as tk
 from tkinter import scrolledtext, ttk, filedialog, messagebox
 from datetime import datetime, timedelta, timezone
-import multiprocessing  # <--- AGREGADO PARA COMPATIBILIDAD CON WINDOWS .EXE
+import multiprocessing  # <--- CRUCIAL PARA EL .EXE
 
 # --- CONFIGURACIÓN DE IDENTIDAD VISUAL ---
-COLOR_BG = "#0A0F1E"      # Fondo oscuro profundo
-COLOR_CARD = "#16213E"    # Fondo de contenedores
-COLOR_ACCENT = "#00D2FF"  # Celeste para títulos y botones
-COLOR_TEXT = "#E1E8EB"    # Texto claro para lectura
-COLOR_SUCCESS = "#00FFC2" # Verde para servicios activos y éxito
-COLOR_ERROR = "#FF4B2B"   # Rojo para alertas de Firewall [!]
-COLOR_WARN = "#FFD700"    # Amarillo para notas técnicas e infraestructura
+COLOR_BG = "#0A0F1E"
+COLOR_CARD = "#16213E"
+COLOR_ACCENT = "#00D2FF"
+COLOR_TEXT = "#E1E8EB"
+COLOR_SUCCESS = "#00FFC2"
+COLOR_ERROR = "#FF4B2B"
+COLOR_WARN = "#FFD700"
 
 # --- LÓGICA DE AUDITORÍA TÉCNICA ---
 
 def get_chile_time():
-    """
-    Calcula la hora exacta de Chile (UTC-4).
-    Se utiliza timedelta para asegurar compatibilidad con Python 3.8+ en la VM.
-    Esto permite que los reportes tengan validez legal y técnica local.
-    """
+    """Calcula la hora exacta de Chile (UTC-4) para validez técnica local."""
     tz_chile = timezone(timedelta(hours=-4))
     return datetime.now(tz_chile).strftime("%Y-%m-%d %H:%M:%S")
 
 def ping_analisis(host):
     """
-    Realiza un 'Ping Sweep' (ICMP) para verificar si un host está vivo.
-    -c 1: Envía un solo paquete.
-    -W 1: Espera máximo 1 segundo la respuesta.
+    Realiza un 'Ping Sweep' invisible.
+    Se utiliza startupinfo para evitar que se abran ventanas de ping.exe en Windows.
     """
     import platform
-    # Ajuste de parámetros según sistema operativo para mayor estabilidad
-    param = '-n' if platform.system().lower() == 'windows' else '-c'
-    wait = '-w' if platform.system().lower() == 'windows' else '-W'
+    sistema = platform.system().lower()
+    
+    # Configuración para que el ping sea SILENCIOSO en Windows
+    startupinfo = None
+    if sistema == "windows":
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        param = '-n'
+        wait = '-w'
+    else:
+        param = '-c'
+        wait = '-W'
+
     comando = ['ping', param, '1', wait, '1000', host]
-    return subprocess.call(comando, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
+    
+    # startupinfo=startupinfo es lo que evita las múltiples ventanas de consola
+    return subprocess.call(comando, startupinfo=startupinfo, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
 def scan_puerto_avanzado(host, port):
-    """
-    Analiza el estado de un puerto TCP y la fidelidad de la respuesta.
-    """
+    """Analiza el estado de un puerto TCP y la fidelidad de la respuesta."""
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(0.6) 
     try:
@@ -63,28 +68,20 @@ def scan_puerto_avanzado(host, port):
         latencia = (end_t - start_t).total_seconds() * 1000
 
         if result == 0:
-            try:
-                s.send(b"HEAD / HTTP/1.1\r\n\r\n")
-                banner = s.recv(512).decode(errors='ignore').strip()[:40]
-                return "ABIERTO", f"Banner: {banner if banner else 'Servicio Activo'} ({latencia:.1f}ms)"
-            except:
-                return "ABIERTO", f"Servicio detectado (Sin banner) ({latencia:.1f}ms)"
-        
-        elif result in [11, 35, 110, 10060]: # Agregado 10060 para errores de Windows
-            return "FILTRADO", "[!] Alerta: Paquete DROP (Posible Firewall/ACL bloqueando el paso)."
-        elif result == 111:
-            return "CERRADO", "Host rechazó la conexión (Puerto cerrado)."
+            return "ABIERTO", f"Servicio Activo ({latencia:.1f}ms)"
+        elif result in [11, 35, 110, 10060]: # 10060 es el error de timeout en Windows
+            return "FILTRADO", "[!] Alerta: Paquete DROP (Firewall detectado)."
         else:
-            return "TIMEOUT", "[!] Sin respuesta: El host ignoró la petición TCP."
+            return "CERRADO", "Puerto cerrado."
+    except:
+        return "ERROR", "Error de conexión."
     finally:
         s.close() 
-
-# --- INTERFAZ GRÁFICA DE USUARIO (GUI) ---
 
 class ScannerChileV49:
     def __init__(self, root):
         self.root = root
-        self.root.title("CyberScanner v4.9 - Auditoría Telecom INACAP")
+        self.root.title("CyberScanner v4.9.2 - Auditoría Telecom INACAP")
         self.root.geometry("1000x750")
         self.root.configure(bg=COLOR_BG)
         
@@ -141,33 +138,13 @@ class ScannerChileV49:
 
     def auditar_host(self, ip):
         if ping_analisis(ip):
-            hora = get_chile_time()
-            reporte = []
-            reporte.append((f"--- AUDITORÍA TÉCNICA: {ip} ---\n", "SUCCESS"))
-            reporte.append((f"FECHA LOCAL: {hora} (CLT)\n", "INFO"))
-            reporte.append((f"{'='*45}\n\n", "INFO"))
+            reporte = [(f"--- AUDITORÍA TÉCNICA: {ip} ---\n", "SUCCESS"), (f"FECHA: {get_chile_time()}\n", "INFO")]
             
             servicios = {22:"SSH", 53:"DNS", 80:"HTTP", 443:"HTTPS"}
-            encontrados = 0
-            
             for p, srv in servicios.items():
                 estado, desc = scan_puerto_avanzado(ip, p)
-                if estado == "ABIERTO":
-                    reporte.append((f"[*] Puerto {p} ({srv}): {desc}\n", "SUCCESS"))
-                    encontrados += 1
-                elif estado == "FILTRADO":
-                    reporte.append((f"[!] Puerto {p} ({srv}): {desc}\n", "ALERTA"))
-
-            if encontrados == 0:
-                reporte.append(("\n[!] ANÁLISIS DE RESULTADOS:\n", "ALERTA"))
-                if ip.endswith(".1") or ip.endswith(".2"):
-                    reporte.append(("Tipo: Infraestructura Virtual (Gateway).\nNota: Este nodo descarta paquetes.\n", "INFO"))
-                elif ip.endswith(".3"):
-                    reporte.append(("Tipo: Servidor DNS Virtual.\n", "INFO"))
-                elif ip.endswith(".15"):
-                    reporte.append(("Tipo: Host Local (Tu VM).\n", "INFO"))
-                else:
-                    reporte.append(("Tipo: Nodo Activo Desconocido.\n", "INFO"))
+                tag = "SUCCESS" if estado == "ABIERTO" else "ALERTA" if estado == "FILTRADO" else "INFO"
+                reporte.append((f"Port {p} ({srv}): {estado} - {desc}\n", tag))
 
             with self.db_lock:
                 self.host_database[ip] = reporte
@@ -192,8 +169,8 @@ class ScannerChileV49:
             messagebox.showinfo("Éxito", "Reporte guardado correctamente.")
 
 if __name__ == "__main__":
-    # --- ARREGLO PARA WINDOWS (MULTIPLE WINDOWS BUG FIX) ---
-    multiprocessing.freeze_support() # <--- CRUCIAL PARA EL ARCHIVO .EXE
+    # --- ARREGLO PARA WINDOWS (DETIENE EL BUCLE DE VENTANAS) ---
+    multiprocessing.freeze_support()
     
     root = tk.Tk()
     app = ScannerChileV49(root)
