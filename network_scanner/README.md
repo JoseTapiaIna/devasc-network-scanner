@@ -57,4 +57,4 @@ Para asegurar que el programa funcione en cualquier PC sin necesidad de tener Py
 ## 👥 Integrantes	
 * **Jose Tapia** - Estudiante de Ingeniería en Telecomunicaciones
 * **Martin Cortes** - Estudiante de Ingeniería en Telecomunicaciones
-* **Pedro Roga Carvajal** - Estudiante de IngiEstudiante de Ingeniería en Telecomunicaciones
+* **Pedro Roga Carvajal** - Estudiante de Ingeniería en Telecomunicaciones
