@@ -15,6 +15,7 @@ import platform
 import tkinter as tk
 from tkinter import scrolledtext, ttk, filedialog, messagebox
 from datetime import datetime, timedelta, timezone
+import multiprocessing  # <--- AGREGADO PARA COMPATIBILIDAD CON WINDOWS .EXE
 
 # --- CONFIGURACIÓN DE IDENTIDAD VISUAL ---
 COLOR_BG = "#0A0F1E"      # Fondo oscuro profundo
@@ -42,27 +43,26 @@ def ping_analisis(host):
     -c 1: Envía un solo paquete.
     -W 1: Espera máximo 1 segundo la respuesta.
     """
-    comando = ['ping', '-c', '1', '-W', '1', host]
+    import platform
+    # Ajuste de parámetros según sistema operativo para mayor estabilidad
+    param = '-n' if platform.system().lower() == 'windows' else '-c'
+    wait = '-w' if platform.system().lower() == 'windows' else '-W'
+    comando = ['ping', param, '1', wait, '1000', host]
     return subprocess.call(comando, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
 def scan_puerto_avanzado(host, port):
     """
     Analiza el estado de un puerto TCP y la fidelidad de la respuesta.
-    Detecta si el puerto está:
-    1. ABIERTO: Conexión exitosa.
-    2. FILTRADO: El paquete fue descartado por un Firewall (DROP).
-    3. CERRADO: El host rechazó la conexión (REJECT).
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(0.6) # Timeout optimizado para escaneo multihilo
+    s.settimeout(0.6) 
     try:
         start_t = datetime.now()
-        result = s.connect_ex((host, port)) # Intenta conectar sin lanzar excepción
+        result = s.connect_ex((host, port)) 
         end_t = datetime.now()
         latencia = (end_t - start_t).total_seconds() * 1000
 
         if result == 0:
-            # Banner Grabbing: Intenta identificar qué software corre en el puerto
             try:
                 s.send(b"HEAD / HTTP/1.1\r\n\r\n")
                 banner = s.recv(512).decode(errors='ignore').strip()[:40]
@@ -70,15 +70,14 @@ def scan_puerto_avanzado(host, port):
             except:
                 return "ABIERTO", f"Servicio detectado (Sin banner) ({latencia:.1f}ms)"
         
-        # Análisis de errores específicos de red (Fidelidad técnica)
-        elif result in [11, 35, 110]: 
+        elif result in [11, 35, 110, 10060]: # Agregado 10060 para errores de Windows
             return "FILTRADO", "[!] Alerta: Paquete DROP (Posible Firewall/ACL bloqueando el paso)."
         elif result == 111:
             return "CERRADO", "Host rechazó la conexión (Puerto cerrado)."
         else:
             return "TIMEOUT", "[!] Sin respuesta: El host ignoró la petición TCP."
     finally:
-        s.close() # Siempre cerrar el socket para liberar recursos del SO
+        s.close() 
 
 # --- INTERFAZ GRÁFICA DE USUARIO (GUI) ---
 
@@ -89,24 +88,21 @@ class ScannerChileV49:
         self.root.geometry("1000x750")
         self.root.configure(bg=COLOR_BG)
         
-        # Base de datos en memoria para los resultados del escaneo
         self.host_database = {}
-        self.db_lock = threading.Lock() # Evita errores de escritura entre hilos
+        self.db_lock = threading.Lock() 
 
-        # Pestañas para organizar la información
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
         self.tab = tk.Frame(self.notebook, bg=COLOR_BG)
         self.notebook.add(self.tab, text=" PANEL DE AUDITORÍA ")
 
-        # Panel Superior de Controles
         ctrl_frame = tk.Frame(self.tab, bg=COLOR_CARD, pady=10)
         ctrl_frame.pack(fill=tk.X)
         
         tk.Label(ctrl_frame, text="RED:", bg=COLOR_CARD, fg=COLOR_ACCENT, font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=10)
         self.entry_net = tk.Entry(ctrl_frame, width=12, font=("Consolas", 12))
-        self.entry_net.insert(0, "10.0.2") # Red por defecto de VirtualBox
+        self.entry_net.insert(0, "10.0.2") 
         self.entry_net.pack(side=tk.LEFT, padx=5)
         
         self.btn_run = tk.Button(ctrl_frame, text="INICIAR SCAN", bg=COLOR_ACCENT, command=self.iniciar)
@@ -114,7 +110,6 @@ class ScannerChileV49:
         
         tk.Button(ctrl_frame, text="💾 GUARDAR", bg=COLOR_SUCCESS, command=self.guardar).pack(side=tk.RIGHT, padx=10)
 
-        # Panel de Visualización (Lista a la izquierda, Detalle a la derecha)
         pw = tk.PanedWindow(self.tab, orient=tk.HORIZONTAL, bg=COLOR_BG, bd=0)
         pw.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -123,14 +118,12 @@ class ScannerChileV49:
         pw.add(self.listbox, width=250)
 
         self.txt_audit = scrolledtext.ScrolledText(pw, bg=COLOR_CARD, fg=COLOR_TEXT, font=("Consolas", 10))
-        # Configuración de estilos para el reporte
         self.txt_audit.tag_config("ALERTA", foreground=COLOR_ERROR, font=("Consolas", 10, "bold"))
         self.txt_audit.tag_config("INFO", foreground=COLOR_WARN)
         self.txt_audit.tag_config("SUCCESS", foreground=COLOR_SUCCESS)
         pw.add(self.txt_audit)
 
     def iniciar(self):
-        """Prepara el entorno y lanza el hilo maestro para no trabar la ventana."""
         net = self.entry_net.get()
         self.listbox.delete(0, tk.END)
         self.host_database.clear()
@@ -138,18 +131,15 @@ class ScannerChileV49:
         threading.Thread(target=self.hilo_maestro, args=(net,), daemon=True).start()
 
     def hilo_maestro(self, net):
-        """Lanza 254 hilos en paralelo para auditar toda la subred en segundos."""
         threads = []
         for i in range(1, 255):
             t = threading.Thread(target=self.auditar_host, args=(f"{net}.{i}",), daemon=True)
             threads.append(t)
             t.start()
         for t in threads: t.join()
-        # Vuelve a habilitar el botón al terminar
         self.root.after(0, lambda: self.btn_run.config(state=tk.NORMAL, text="INICIAR SCAN"))
 
     def auditar_host(self, ip):
-        """Ejecuta el escaneo de puertos solo si el host responde al ping."""
         if ping_analisis(ip):
             hora = get_chile_time()
             reporte = []
@@ -157,7 +147,6 @@ class ScannerChileV49:
             reporte.append((f"FECHA LOCAL: {hora} (CLT)\n", "INFO"))
             reporte.append((f"{'='*45}\n\n", "INFO"))
             
-            # Puertos críticos para auditoría básica
             servicios = {22:"SSH", 53:"DNS", 80:"HTTP", 443:"HTTPS"}
             encontrados = 0
             
@@ -169,25 +158,22 @@ class ScannerChileV49:
                 elif estado == "FILTRADO":
                     reporte.append((f"[!] Puerto {p} ({srv}): {desc}\n", "ALERTA"))
 
-            # Lógica de Análisis de Resultados (Cumple Punto 4 de la pauta)
             if encontrados == 0:
                 reporte.append(("\n[!] ANÁLISIS DE RESULTADOS:\n", "ALERTA"))
                 if ip.endswith(".1") or ip.endswith(".2"):
-                    reporte.append(("Tipo: Infraestructura Virtual (Gateway).\nNota: Este nodo descarta paquetes para seguridad del NAT.\n", "INFO"))
+                    reporte.append(("Tipo: Infraestructura Virtual (Gateway).\nNota: Este nodo descarta paquetes.\n", "INFO"))
                 elif ip.endswith(".3"):
-                    reporte.append(("Tipo: Servidor DNS Virtual.\nNota: Es común que solo responda a consultas DNS.\n", "INFO"))
+                    reporte.append(("Tipo: Servidor DNS Virtual.\n", "INFO"))
                 elif ip.endswith(".15"):
-                    reporte.append(("Tipo: Host Local (Tu VM).\nNota: No se detectan puertos abiertos porque no hay servicios activos.\n", "INFO"))
+                    reporte.append(("Tipo: Host Local (Tu VM).\n", "INFO"))
                 else:
-                    reporte.append(("Tipo: Nodo Activo Desconocido.\nNota: El host responde a PING pero bloquea escaneos TCP.\n", "INFO"))
+                    reporte.append(("Tipo: Nodo Activo Desconocido.\n", "INFO"))
 
-            # Guardar en la base de datos de forma segura (Thread-safe)
             with self.db_lock:
                 self.host_database[ip] = reporte
                 self.root.after(0, lambda: self.listbox.insert(tk.END, ip))
 
     def ver_detalle(self, event):
-        """Muestra el reporte detallado al hacer clic en una IP de la lista."""
         sel = self.listbox.curselection()
         if sel:
             ip = self.listbox.get(sel[0])
@@ -196,7 +182,6 @@ class ScannerChileV49:
                 self.txt_audit.insert(tk.END, texto, tag)
 
     def guardar(self):
-        """Exporta todos los resultados a un archivo de texto (Punto 4.5 de la pauta)."""
         path = filedialog.asksaveasfilename(defaultextension=".txt")
         if path:
             with open(path, "w") as f:
@@ -207,6 +192,9 @@ class ScannerChileV49:
             messagebox.showinfo("Éxito", "Reporte guardado correctamente.")
 
 if __name__ == "__main__":
+    # --- ARREGLO PARA WINDOWS (MULTIPLE WINDOWS BUG FIX) ---
+    multiprocessing.freeze_support() # <--- CRUCIAL PARA EL ARCHIVO .EXE
+    
     root = tk.Tk()
     app = ScannerChileV49(root)
     root.mainloop()
