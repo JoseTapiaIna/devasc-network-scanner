@@ -1,14 +1,34 @@
-------------------------------------------------------------
-Escáner de Red - Ingenieros en Telecomunicaciones INACAP
-------------------------------------------------------------
+REPORTE AUDITORÍA CHILE - 2026-04-08 22:28:06
 
-[*] Iniciando Ping Sweep en la subred: 10.0.2.0/24
-[+] Host activo encontrado: 10.0.2.2
-[+] Host activo encontrado: 10.0.2.3
-[+] Host activo encontrado: 10.0.2.15
+--- AUDITORÍA TÉCNICA: 10.0.2.15 ---
+FECHA LOCAL: 2026-04-08 22:15:20 (CLT)
+=============================================
 
-[*] Escaneando puertos en 10.0.2.2...
 
-[*] Escaneando puertos en 10.0.2.3...
+[!] ANÁLISIS DE RESULTADOS:
+Tipo: Host Local (Tu VM).
+Nota: No se detectan puertos abiertos porque no hay servicios
+corriendo en este momento (Ej: Apache o SSH server).
 
-[*] Escaneando puertos en 10.0.2.15...
+##################################################
+--- AUDITORÍA TÉCNICA: 10.0.2.2 ---
+FECHA LOCAL: 2026-04-08 22:15:20 (CLT)
+=============================================
+
+[!] Puerto 22 (SSH): [!] Alerta: Paquete DROP (Posible Firewall/ACL bloqueando el paso).
+[!] Puerto 53 (DNS): [!] Alerta: Paquete DROP (Posible Firewall/ACL bloqueando el paso).
+[!] Puerto 80 (HTTP): [!] Alerta: Paquete DROP (Posible Firewall/ACL bloqueando el paso).
+[!] Puerto 443 (HTTPS): [!] Alerta: Paquete DROP (Posible Firewall/ACL bloqueando el paso).
+
+[!] ANÁLISIS DE RESULTADOS:
+Tipo: Infraestructura Virtual (Gateway).
+Nota: Este nodo descarta paquetes para seguridad del NAT.
+
+##################################################
+--- AUDITORÍA TÉCNICA: 10.0.2.3 ---
+FECHA LOCAL: 2026-04-08 22:15:20 (CLT)
+=============================================
+
+[*] Puerto 53 (DNS): Servicio detectado (Sin banner) (39.8ms)
+
+##################################################
