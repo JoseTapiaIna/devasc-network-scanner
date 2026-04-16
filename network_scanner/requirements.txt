@@ -1,0 +1,14 @@
+# Dependencias de CyberScanner v4.9.9
+# Instalación: pip install -r requirements.txt
+
+# --- Librerías del Sistema y GUI ---
+# tkinter (incluida en instalaciones estándar de Python 3)
+
+# --- Detección de Sistema (OS Fingerprinting) ---
+# Si usaste WMI para obtener info del sistema local:
+WMI==1.5.1
+pywin32==306
+
+# --- Herramientas de Desarrollo (Opcional) ---
+# Necesario para generar el archivo .exe
+pyinstaller==6.5.0
