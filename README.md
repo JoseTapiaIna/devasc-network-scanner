@@ -1,3 +1,5 @@
+# CyberScanner v4.9.9 - Auditoría de Redes
+
 ## 📝 Descripción
 CyberScanner es una herramienta de auditoría técnica desarrollada en Python, diseñada para la exploración y diagnóstico de seguridad en redes locales (LAN). El software permite identificar nodos activos y auditar la disponibilidad de servicios críticos, entregando un análisis detallado sobre la postura de seguridad de cada dispositivo encontrado.
 
@@ -52,6 +54,7 @@ Para asegurar que el programa funcione en cualquier PC sin necesidad de tener Py
 
 ---
 
-## 👥 Integrantes (Los Power Rangers)
+## 👥 Integrantes	
 * **Jose Tapia** - Estudiante de Ingeniería en Telecomunicaciones
 * **Martin Cortes** - Estudiante de Ingeniería en Telecomunicaciones
+* **Pedro Roga Carvajal** - Estudiante de Ingeniería en Telecomunicaciones
